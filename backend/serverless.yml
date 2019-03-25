@@ -1,0 +1,15 @@
+# Serverless configuration
+
+service: serverless-chat
+
+provider:
+  name: aws
+  runtime: python3.7
+
+functions:
+  ping:
+    handler: handler.ping
+    events:
+        - http:
+            path: ping
+            method: get
