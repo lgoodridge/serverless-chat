@@ -1,15 +1,45 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Index Page</title>
+        {% load static %}
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no"/>
+        <title>Serverless Chat</title>
+        <link rel="shortcut icon" href="favicon.ico"/>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" type="text/css" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" type="text/css" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="{% static 'chat/style.css' %}" type="text/css"/>
     </head>
     <body>
-        {% if request.user.is_authenticated %}
-            <h2>Hello {% if request.user.email %}{{ request.user.email }}{% elif request.user.username %}{{ request.user.username }}{% endif %}</h2>
-            <p><a href="/accounts/logout/">Logout</a></p>
-        {% else %}
-            <h2>This is the index page!</h2>
-            <p><a href="/accounts/login/">Login</a></p>
-        {% endif %}
+        <div id="main-wrapper" class="wrapper">
+            <div id="header-bar" class="jumbotron text-center">
+                <h1 id="header-text-first">Welcome to the</h1><h1>Serverless Chatroom</h1>
+                <p>Catch up on the conversation below!</p>
+            </div>
+            <div id="main-container">
+                <div id="message-container" class="row col-lg-12">
+                    <div id="empty-message" class="message">-- No messages --</div>
+                </div>
+            </div>
+            <div id="footer-container">
+                <div id="post-container" class="card-header form-inline row col-lg-12">
+                    <i id="comments-icon" class="fas fa-comments" aria-hidden="true"></i>
+                    <input id="post-bar" type="text" class="form-control" placeholder="Write a Message!" maxlength=70/>
+                    <button id="post-btn" class="btn btn-primary">Post</button>
+                </div>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js" crossorigin="anonymous"></script>
+        <script src="{% static 'chat/custom.js' %}"></script>
+        <script>
+            $("#post-btn").on("click", function() {
+                postMessage("{{ request.session.session_key }}", "{{ request.user.username }}");
+            });
+            $(document).ready(function() {
+                setupWebsocket("{{ request.session.session_key }}", "{{ request.user.username}}");
+            });
+        </script>
     </body>
 </html>

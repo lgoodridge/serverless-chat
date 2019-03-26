@@ -1,0 +1,88 @@
+body {
+    background: #4c5667;
+    height: 100%;
+}
+
+html {
+    height: 100%;
+}
+
+.btn-primary {
+    background-color: #039cfd;
+    border-color: #039cfd;
+}
+
+#comments-icon {
+    padding-right: 16px;
+}
+
+#footer-container {
+    bottom: 0px;
+    left: 50%;
+    margin-left: -35%;
+    position: absolute;
+    width: 70%
+}
+
+#header-bar {
+    background: #dcdfe2;
+    padding: 2rem 1rem;
+}
+
+#header-bar h1 {
+    display: inline-block;
+}
+
+#header-text-first {
+    padding-right: 10px;
+}
+
+#main-container {
+    height: calc(100% - 262px);
+    padding-left: 15%;
+    padding-right: 15%;
+    width: 100%;
+}
+
+#main-wrapper {
+    background: #f4f6fa;
+    height: 100%;
+    overflow: auto;
+}
+
+#main-wrapper .container {
+    padding-bottom: 30px;
+}
+
+#message-container {
+    display: block;
+}
+
+#post-bar {
+    flex: 1;
+    width: 100%;
+}
+
+#post-btn {
+    margin-left: 15px;
+}
+
+#post-container {
+    background-color: #dcdfe2
+}
+
+#results p b {
+    padding-right: 8px;
+}
+
+@media (max-width: 768px) {
+    #search-actions {
+        padding-top: 10px;
+        padding-left: 46px;
+    }
+}
+
+#search-actions button {
+    margin-right: 5px;
+    width: 80px;
+}
