@@ -25,8 +25,12 @@ var/
 # Django stuff
 *.log
 
+# Node package
+node_modules
+
 # Serverless directories
 .serverless
+.requirements
 
 # Ignore local database file
 db.sqlite3
