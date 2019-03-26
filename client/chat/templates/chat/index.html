@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Index Page</title>
+    </head>
+    <body>
+        {% if request.user.is_authenticated %}
+            <h2>Hello {% if request.user.email %}{{ request.user.email }}{% elif request.user.username %}{{ request.user.username }}{% endif %}</h2>
+            <p><a href="/accounts/logout/">Logout</a></p>
+        {% else %}
+            <h2>This is the index page!</h2>
+            <p><a href="/accounts/login/">Login</a></p>
+        {% endif %}
+    </body>
+</html>
