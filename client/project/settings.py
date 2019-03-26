@@ -19,14 +19,18 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 't8m_!ga)y(sk)&eq3i7-&pbd1f@mg&-n94vd^3ydyw$gx+wruu'
-
-# SECURITY WARNING: don't run with debug turned on in production!
+# Definitely change these for real applications
 DEBUG = True
+SECRET_KEY = 'FAKE_SECRET'
+ALLOWED_HOSTS = ['*']
 
-ALLOWED_HOSTS = []
+# Uniauth Settings
+LOGIN_URL = '/accounts/login/'
+UNIAUTH_FROM_EMAIL = 'uniauth@serverless-chat.com'
+UNIAUTH_LOGIN_REDIRECT_URL = '/'
 
+# Log emails to the console
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Application definition
 
@@ -38,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'chat',
+    'uniauth',
 ]
 
 MIDDLEWARE = [
@@ -48,6 +53,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+AUTHENTICATION_BACKENDS = [
+    'uniauth.backends.LinkedEmailBackend',
+    'uniauth.backends.CASBackend',
 ]
 
 ROOT_URLCONF = 'project.urls'
