@@ -8,7 +8,6 @@ function setupWebsocket(sessionKey, username) {
 
     socket.onopen = function(event) {
         console.log("Socket is open!");
-        console.log(event);
     }
 
     socket.onmessage = function(message) {
@@ -21,6 +20,7 @@ function setupWebsocket(sessionKey, username) {
         } else {
             $("#message-container").append("<div class='message'><b>(" + data["username"] + ")</b> " + data["content"]);
         }
+        $("#message-container").children().last()[0].scrollIntoView();
     };
 }
 

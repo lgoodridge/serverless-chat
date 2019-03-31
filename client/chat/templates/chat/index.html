@@ -34,6 +34,11 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js" crossorigin="anonymous"></script>
         <script src="{% static 'chat/custom.js' %}"></script>
         <script>
+            $("#post-bar").on("keyup", function(e) {
+                if (e.keyCode == 13) {
+                    postMessage("{{ request.session.session_key }}", "{{ request.user.username }}");
+                }
+            });
             $("#post-btn").on("click", function() {
                 postMessage("{{ request.session.session_key }}", "{{ request.user.username }}");
             });
