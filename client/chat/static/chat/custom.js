@@ -3,8 +3,8 @@
 var socket;
 
 // Connect to the websocket and setup listeners
-function setupWebsocket(sessionKey, username) {
-    socket = new ReconnectingWebSocket("wss://0hhv85vkol.execute-api.us-east-1.amazonaws.com/dev?sessionid=" + sessionKey);
+function setupWebsocket(username, token) {
+    socket = new ReconnectingWebSocket("wss://0hhv85vkol.execute-api.us-east-1.amazonaws.com/dev?token=" + token);
 
     socket.onopen = function(event) {
         console.log("Socket is open!");
@@ -29,10 +29,10 @@ function setupWebsocket(sessionKey, username) {
 }
 
 // Sends a message to the websocket using the text in the post bar
-function postMessage(sessionKey, username) {
+function postMessage(token) {
     var content = $("#post-bar").val();
     if (content !== "") {
-        data = {"action": "sendMessage", "username": username, "content": content};
+        data = {"action": "sendMessage", "token": token, "content": content};
         socket.send(JSON.stringify(data));
         $("#post-bar").val("");
     }

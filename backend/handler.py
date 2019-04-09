@@ -1,6 +1,7 @@
 import boto3
 import decimal
 import json
+import jwt
 import logging
 import time
 
@@ -44,33 +45,33 @@ def connection_manager(event, context):
     """
     Handles connecting and disconnecting for the Websocket.
 
-    Connect validates the passed in sessionID, and if successful,
+    Connect verifes the passed in token, and if successful,
     adds the connectionID to the database.
 
     Disconnect removes the connectionID from the database.
     """
-    sessionID = event.get("queryStringParameters", {}).get("sessionid")
     connectionID = event["requestContext"].get("connectionId")
+    token = event.get("queryStringParameters", {}).get("token")
 
     if event["requestContext"]["eventType"] == "CONNECT":
-        logger.info("Connect requested (SID: {}, CID: {})"\
-                .format(sessionID, connectionID))
+        logger.info("Connect requested (CID: {}, Token: {})"\
+                .format(connectionID, token))
 
-        # Ensure sessionID and connectionID are set
-        if not sessionID:
-            logger.debug("Failed: sessionid query parameter not provided.")
-            return _get_response(400, "sessionid query parameter not provided.")
+        # Ensure connectionID and token are set
         if not connectionID:
             logger.error("Failed: connectionId value not set.")
             return _get_response(500, "connectionId value not set.")
+        if not token:
+            logger.debug("Failed: token query parameter not provided.")
+            return _get_response(400, "token query parameter not provided.")
 
-        # Ensure sessionID is in the database
-        table = dynamodb.Table("serverless-chat_Sessions")
-        response = table.get_item(Key={"SessionID": sessionID})
-        if not response.get("Item"):
-            logger.debug("Failed: sessionid '{}' not registered."\
-                    .format(sessionID))
-            return _get_response(400, "sessionid not registered.")
+        # Verify the token
+        try:
+            payload = jwt.decode(token, "FAKE_SECRET", algorithms="HS256")
+            logger.info("Verified JWT for '{}'".format(payload.get("username")))
+        except:
+            logger.debug("Failed: Token verification failed.")
+            return _get_response(400, "Token verification failed.")
 
         # Add connectionID to the database
         table = dynamodb.Table("serverless-chat_Connections")
@@ -134,7 +135,8 @@ def get_recent_messages(event, context):
 
 def send_message(event, context):
     """
-    When a message is sent on the socket, forward it to all connections.
+    When a message is sent on the socket, verify the passed in token,
+    and forward it to all connections if successful.
     """
     logger.info("Message sent on websocket.")
 
@@ -143,12 +145,21 @@ def send_message(event, context):
     if not isinstance(body, dict):
         logger.debug("Failed: message body not in dict format.")
         return _get_response(400, "Message body not in dict format.")
-    for attribute in ["username", "content"]:
+    for attribute in ["token", "content"]:
         if attribute not in body:
             logger.debug("Failed: '{}' not in message dict."\
                     .format(attribute))
             return _get_response(400, "'{}' not in message dict"\
                     .format(attribute))
+
+    # Verify the token
+    try:
+        payload = jwt.decode(body["token"], "FAKE_SECRET", algorithms="HS256")
+        username = payload.get("username")
+        logger.info("Verified JWT for '{}'".format(username))
+    except:
+        logger.debug("Failed: Token verification failed.")
+        return _get_response(400, "Token verification failed.")
 
     # Get all current connections
     table = dynamodb.Table("serverless-chat_Connections")
@@ -170,12 +181,13 @@ def send_message(event, context):
     # Add the new message to the database
     timestamp = int(time.time())
     table.put_item(Item={"Room": "general", "Index": index,
-            "Timestamp": timestamp, "Username": body["username"],
+            "Timestamp": timestamp, "Username": username,
             "Content": body["content"]})
 
     # Send the message data to all connections
-    logger.debug("Broadcasting message: {}".format(body))
-    data = {"messages": [body]}
+    message = {"username": username, "content": body["content"]}
+    logger.debug("Broadcasting message: {}".format(message))
+    data = {"messages": [message]}
     for connectionID in connections:
         _send_to_connection(connectionID, data, event)
     return _get_response(200, "Message sent to {} connections."\
@@ -188,38 +200,3 @@ def ping(event, context):
     logger.info("Ping requested.")
     return _get_response(200, "PONG!")
 
-
-def register_session(event, context):
-    """
-    Registers a user with a given session ID.
-    """
-    logger.info("Register session endpoint requested.")
-    body = _get_body(event)
-
-    # Ensure all attributes were provided
-    if len(body) == 0:
-        logger.debug("Failed: POST data not provided.")
-        return _get_response(400, "POST data not provided.")
-    for attribute in ["secret", "sessionid", "username"]:
-        if attribute not in body:
-            logger.debug("Failed: '{}' parameter not provided."\
-                    .format(attribute))
-            return _get_response(400, "'{}' parameter not provided."\
-                    .format(attribute))
-
-    # Ensure the shared secret is correct
-    if body["secret"] != "SHARED_SECRET":
-        logger.debug("Failed: shared secret was incorrect.")
-        return _get_response(403, "Forbidden: incorrect shared secret.")
-
-    # Add the session ID to the database
-    timestamp = int(time.time())
-    ttl = timestamp + (60 * 60 * 24)
-    table = dynamodb.Table("serverless-chat_Sessions")
-    table.put_item(Item={
-            "SessionID": body["sessionid"],
-            "Username": body["username"],
-            "Timestamp": timestamp,
-            "TTL": ttl,
-    })
-    return _get_response(200, "Register successful.")

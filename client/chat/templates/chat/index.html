@@ -36,14 +36,14 @@
         <script>
             $("#post-bar").on("keyup", function(e) {
                 if (e.keyCode == 13) {
-                    postMessage("{{ request.session.session_key }}", "{{ request.user.username }}");
+                    postMessage("{{ token }}");
                 }
             });
             $("#post-btn").on("click", function() {
-                postMessage("{{ request.session.session_key }}", "{{ request.user.username }}");
+                postMessage("{{ token }}");
             });
             $(document).ready(function() {
-                setupWebsocket("{{ request.session.session_key }}", "{{ request.user.username}}");
+                setupWebsocket("{{ request.user.username }}", "{{ token }}");
             });
         </script>
     </body>

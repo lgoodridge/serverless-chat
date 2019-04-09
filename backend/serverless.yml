@@ -64,10 +64,4 @@ functions:
             - http:
                 path: ping
                 method: get
-    registerSession:
-        handler: handler.register_session
-        events:
-            - http:
-                path: register_session
-                method: post
 
