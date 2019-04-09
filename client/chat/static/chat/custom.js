@@ -8,19 +8,23 @@ function setupWebsocket(sessionKey, username) {
 
     socket.onopen = function(event) {
         console.log("Socket is open!");
+        data = {"action": "getRecentMessages"};
+        socket.send(JSON.stringify(data));
     }
 
     socket.onmessage = function(message) {
         var data = JSON.parse(message.data);
-        if ($("#message-container").children(0).attr("id") == "empty-message") {
-            $("#message-container").empty();
-        }
-        if (data["username"] === username) {
-            $("#message-container").append("<div class='message self-message'><b>(You)</b> " + data["content"]);
-        } else {
-            $("#message-container").append("<div class='message'><b>(" + data["username"] + ")</b> " + data["content"]);
-        }
-        $("#message-container").children().last()[0].scrollIntoView();
+        data["messages"].forEach(function(message) {
+            if ($("#message-container").children(0).attr("id") == "empty-message") {
+                $("#message-container").empty();
+            }
+            if (message["username"] === username) {
+                $("#message-container").append("<div class='message self-message'><b>(You)</b> " + message["content"]);
+            } else {
+                $("#message-container").append("<div class='message'><b>(" + message["username"] + ")</b> " + message["content"]);
+            }
+            $("#message-container").children().last()[0].scrollIntoView();
+        });
     };
 }
 

@@ -45,8 +45,7 @@ def connection_manager(event, context):
     Handles connecting and disconnecting for the Websocket.
 
     Connect validates the passed in sessionID, and if successful,
-    adds the connectionID to the database, and returns the ten
-    most recent chat messages.
+    adds the connectionID to the database.
 
     Disconnect removes the connectionID from the database.
     """
@@ -76,14 +75,7 @@ def connection_manager(event, context):
         # Add connectionID to the database
         table = dynamodb.Table("serverless-chat_Connections")
         table.put_item(Item={"ConnectionID": connectionID})
-
-        # Fetch the 10 most recent chat messages
-        table = dynamodb.Table("serverless-chat_Messages")
-        response = table.query(KeyConditionExpression="Room = :room",
-                ExpressionAttributeValues={":room": "general"},
-                Limit=10, ScanIndexForward=False)
-        items = response.get("Items", [])
-        return _get_response(200, items)
+        return _get_response(200, "Connect successful.")
 
     elif event["requestContext"]["eventType"] == "DISCONNECT":
         logger.info("Disconnect requested (CID: {})".format(connectionID))
@@ -112,6 +104,34 @@ def default_message(event, context):
     return _get_response(400, "Unrecognized websocket action.")
 
 
+def get_recent_messages(event, context):
+    """
+    Return the 10 most recent chat messages.
+    """
+    connectionID = event["requestContext"].get("connectionId")
+    logger.info("Retrieving most recent messages for CID '{}'"\
+            .format(connectionID))
+
+    # Get the 10 most recent chat messages
+    table = dynamodb.Table("serverless-chat_Messages")
+    response = table.query(KeyConditionExpression="Room = :room",
+            ExpressionAttributeValues={":room": "general"},
+            Limit=10, ScanIndexForward=False)
+    items = response.get("Items", [])
+
+    # Extract the relevant data and order chronologically
+    messages = [{"username": x["Username"], "content": x["Content"]}
+            for x in items]
+    messages.reverse()
+
+    # Send them to the client who asked for it
+    data = {"messages": messages}
+    _send_to_connection(connectionID, data, event)
+
+    return _get_response(200, "Sent recent messages to '{}'."\
+            .format(connectionID))
+
+
 def send_message(event, context):
     """
     When a message is sent on the socket, forward it to all connections.
@@ -129,13 +149,13 @@ def send_message(event, context):
                     .format(attribute))
             return _get_response(400, "'{}' not in message dict"\
                     .format(attribute))
-    
+
     # Get all current connections
     table = dynamodb.Table("serverless-chat_Connections")
     response = table.scan(ProjectionExpression="ConnectionID")
     items = response.get("Items", [])
     connections = [x["ConnectionID"] for x in items if "ConnectionID" in x]
-    
+
     # Get the next message index
     # (Note: there is technically a race condition where two
     # users post at the same time and use the same index, but
@@ -154,9 +174,10 @@ def send_message(event, context):
             "Content": body["content"]})
 
     # Send the message data to all connections
-    logger.debug("Broadcasted message: {}".format(body))
+    logger.debug("Broadcasting message: {}".format(body))
+    data = {"messages": [body]}
     for connectionID in connections:
-        _send_to_connection(connectionID, body, event)
+        _send_to_connection(connectionID, data, event)
     return _get_response(200, "Message sent to {} connections."\
             .format(len(connections)))
 

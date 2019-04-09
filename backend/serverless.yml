@@ -48,6 +48,11 @@ functions:
         events:
             - websocket:
                 route: $default
+    getRecentMessages:
+        handler: handler.get_recent_messages
+        events:
+            - websocket:
+                route: getRecentMessages
     sendMessage:
         handler: handler.send_message
         events:
