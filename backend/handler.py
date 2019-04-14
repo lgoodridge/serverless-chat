@@ -1,5 +1,4 @@
 import boto3
-import decimal
 import json
 import jwt
 import logging
@@ -20,22 +19,14 @@ def _get_body(event):
 
 
 def _get_response(status_code, body):
-    def _clean_data(data):
-        if isinstance(data, list):
-            return [_clean_data(x) for x in data]
-        if isinstance(data, dict):
-            return {k: _clean_data(v) for k, v in data.items()}
-        if isinstance(data, decimal.Decimal):
-            return int(data)
-        return data
     if not isinstance(body, str):
-        body = json.dumps(_clean_data(body))
+        body = json.dumps(body)
     return {"statusCode": status_code, "body": body}
 
 
 def _send_to_connection(connection_id, data, event):
     gatewayapi = boto3.client("apigatewaymanagementapi",
-            endpoint_url= "https://" + event["requestContext"]["domainName"] +
+            endpoint_url = "https://" + event["requestContext"]["domainName"] +
                     "/" + event["requestContext"]["stage"])
     return gatewayapi.post_to_connection(ConnectionId=connection_id,
             Data=json.dumps(data).encode('utf-8'))
@@ -99,10 +90,10 @@ def connection_manager(event, context):
 
 def default_message(event, context):
     """
-    Send back error when unrecognized websocket action is received.
+    Send back error when unrecognized WebSocket action is received.
     """
-    logger.info("Unrecognized websocket action received.")
-    return _get_response(400, "Unrecognized websocket action.")
+    logger.info("Unrecognized WebSocket action received.")
+    return _get_response(400, "Unrecognized WebSocket action.")
 
 
 def get_recent_messages(event, context):
@@ -112,6 +103,11 @@ def get_recent_messages(event, context):
     connectionID = event["requestContext"].get("connectionId")
     logger.info("Retrieving most recent messages for CID '{}'"\
             .format(connectionID))
+
+    # Ensure connectionID is set
+    if not connectionID:
+        logger.error("Failed: connectionId value not set.")
+        return _get_response(500, "connectionId value not set.")
 
     # Get the 10 most recent chat messages
     table = dynamodb.Table("serverless-chat_Messages")
@@ -138,7 +134,7 @@ def send_message(event, context):
     When a message is sent on the socket, verify the passed in token,
     and forward it to all connections if successful.
     """
-    logger.info("Message sent on websocket.")
+    logger.info("Message sent on WebSocket.")
 
     # Ensure all required fields were provided
     body = _get_body(event)
@@ -161,12 +157,6 @@ def send_message(event, context):
         logger.debug("Failed: Token verification failed.")
         return _get_response(400, "Token verification failed.")
 
-    # Get all current connections
-    table = dynamodb.Table("serverless-chat_Connections")
-    response = table.scan(ProjectionExpression="ConnectionID")
-    items = response.get("Items", [])
-    connections = [x["ConnectionID"] for x in items if "ConnectionID" in x]
-
     # Get the next message index
     # (Note: there is technically a race condition where two
     # users post at the same time and use the same index, but
@@ -180,12 +170,19 @@ def send_message(event, context):
 
     # Add the new message to the database
     timestamp = int(time.time())
+    content = body["content"]
     table.put_item(Item={"Room": "general", "Index": index,
             "Timestamp": timestamp, "Username": username,
-            "Content": body["content"]})
+            "Content": content})
+
+    # Get all current connections
+    table = dynamodb.Table("serverless-chat_Connections")
+    response = table.scan(ProjectionExpression="ConnectionID")
+    items = response.get("Items", [])
+    connections = [x["ConnectionID"] for x in items if "ConnectionID" in x]
 
     # Send the message data to all connections
-    message = {"username": username, "content": body["content"]}
+    message = {"username": username, "content": content}
     logger.debug("Broadcasting message: {}".format(message))
     data = {"messages": [message]}
     for connectionID in connections:

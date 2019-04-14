@@ -34,16 +34,16 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js" crossorigin="anonymous"></script>
         <script src="{% static 'chat/custom.js' %}"></script>
         <script>
-            $("#post-bar").on("keyup", function(e) {
-                if (e.keyCode == 13) {
-                    postMessage("{{ token }}");
-                }
+            $(document).ready(function() {
+                setupWebSocket("{{ endpoint }}", "{{ request.user.username }}", "{{ token }}");
             });
             $("#post-btn").on("click", function() {
                 postMessage("{{ token }}");
             });
-            $(document).ready(function() {
-                setupWebsocket("{{ request.user.username }}", "{{ token }}");
+            $("#post-bar").on("keyup", function(e) {
+                if (e.keyCode == 13) {
+                    postMessage("{{ token }}");
+                }
             });
         </script>
     </body>

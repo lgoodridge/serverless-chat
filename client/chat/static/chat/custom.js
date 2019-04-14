@@ -2,15 +2,15 @@
 
 var socket;
 
-// Connect to the websocket and setup listeners
-function setupWebsocket(username, token) {
-    socket = new ReconnectingWebSocket("wss://0hhv85vkol.execute-api.us-east-1.amazonaws.com/dev?token=" + token);
+// Connect to the WebSocket and setup listeners
+function setupWebSocket(endpoint, username, token) {
+    socket = new ReconnectingWebSocket(endpoint + "?token=" + token);
 
     socket.onopen = function(event) {
         console.log("Socket is open!");
         data = {"action": "getRecentMessages"};
         socket.send(JSON.stringify(data));
-    }
+    };
 
     socket.onmessage = function(message) {
         var data = JSON.parse(message.data);
