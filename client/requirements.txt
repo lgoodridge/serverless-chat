@@ -1,6 +1,6 @@
 certifi==2019.3.9
 chardet==3.0.4
-Django==2.1.7
+Django==2.2.24
 django-uniauth==1.0.4
 docutils==0.14
 idna==2.8
