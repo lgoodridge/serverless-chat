@@ -5,7 +5,7 @@ django-uniauth==1.0.4
 docutils==0.14
 idna==2.8
 jmespath==0.9.4
-lxml==4.3.2
+lxml==4.6.5
 PyJWT==1.7.1
 python-cas==1.4.0
 python-dateutil==2.8.0
